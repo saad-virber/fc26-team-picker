@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FC 26 Team Picker | Classic Rivalries Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,700;1,700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Chakra Petch', 'sans-serif'],
+          },
+          colors: {
+            fc: {
+              pitch: '#070a09',
+              surface: '#0f1613',
+              elevated: '#17221d',
+              border: '#24352c',
+              neon: '#00ff87',
+              cyan: '#00e5ff',
+              gold: '#ffd000',
+              accent: '#ff0055',
+            }
+          },
+          boxShadow: {
+            'neon-glow': '0 0 20px -2px rgba(0, 255, 135, 0.45)',
+            'cyan-glow': '0 0 20px -2px rgba(0, 229, 255, 0.45)',
+            'gold-glow': '0 0 20px -2px rgba(255, 208, 0, 0.45)',
+            'card': '0 10px 25px -5px rgba(0, 0, 0, 0.7)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body {
+      background-color: #070a09;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 255, 135, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(0, 229, 255, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 22, 19, 0.8) 0px, #070a09 100%);
+      color: #f3f4f6;
+      min-height: 100vh;
+      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 85px);
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #00ff87;
+      border: 2px solid #070a09;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 135, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar { display: none; }
+    .custom-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 208, 0, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(255, 208, 0, 0.7); }
+    }
+    .derby-glow {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-fc-neon selection:text-black">
+
+  <header class="sticky top-0 z-40 bg-fc-pitch/90 backdrop-blur-md border-b border-fc-border px-3.5 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-fc-neon to-emerald-600 flex items-center justify-center text-black font-display font-black text-sm shadow-[0_0_12px_rgba(0,255,135,0.4)]">
+        FC
+      </div>
+      <div>
+        <h1 class="font-display font-bold text-base leading-none text-white tracking-wide flex items-center gap-1.5">
+          FC 26 <span class="text-fc-neon">RANDOMIZER</span>
+        </h1>
+        <p class="text-[10px] font-medium text-gray-400">1v1 Couch Matchmaker</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <button id="audio-toggle" class="p-2 rounded-lg bg-fc-surface border border-fc-border text-gray-300 active:scale-95 transition" aria-label="Toggle Audio">
+        <i data-lucide="volume-2" class="w-4 h-4 text-fc-neon"></i>
+      </button>
+      <div id="pool-counter-btn" class="px-2.5 py-1 rounded-lg bg-fc-surface border border-fc-border text-[11px] font-mono text-fc-neon flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-fc-neon animate-pulse"></span>
+        <span id="pool-count">720+</span> <span class="hidden sm:inline">Teams</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-3.5 pt-3 max-w-lg mx-auto w-full space-y-3">
+
+    <!-- 1. Compact Opponent Select Dropdowns -->
+    <div class="bg-fc-surface border border-fc-border rounded-xl p-3 shadow-card space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold tracking-wider text-gray-300 uppercase flex items-center gap-1.5">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-fc-neon"></i>
+          Select Opponents
+        </span>
+        <button id="swap-players-btn" class="text-[11px] text-fc-cyan flex items-center gap-1 font-semibold px-2 py-0.5 rounded bg-fc-cyan/10 border border-fc-cyan/20 active:scale-95 transition">
+          <i data-lucide="arrow-left-right" class="w-3 h-3"></i> Swap
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <!-- P1 Dropdown -->
+        <div class="bg-fc-pitch/80 border border-fc-border rounded-lg p-2 flex flex-col justify-start">
+          <label class="text-[10px] font-bold text-gray-400 mb-1 flex items-center justify-between">
+            <span class="text-fc-neon tracking-wider">PLAYER 1</span>
+            <span id="p1-badge" class="text-xs">🐧</span>
+          </label>
+          <select id="p1-select" class="w-full bg-fc-elevated text-white font-bold text-xs sm:text-sm rounded border border-fc-border px-2 py-1.5 focus:outline-none focus:border-fc-neon">
+            <option value="amine" selected>Amine 🐧</option>
+            <option value="mohammed">Mohammed 🦁</option>
+            <option value="saad">Saad 🐼</option>
+            <option value="ayoub">Ayoub 🐐</option>
+            <option value="rita">Rita 🕊️</option>
+          </select>
+          <p id="p1-desc" class="text-[10px] leading-relaxed text-gray-400 italic mt-2 min-h-[72px]">The Chessmaster. Orchestrates the tempo, carving open backlines with sequence after sequence until the defense breaks.</p>
+        </div>
+
+        <!-- P2 Dropdown -->
+        <div class="bg-fc-pitch/80 border border-fc-border rounded-lg p-2 flex flex-col justify-start">
+          <label class="text-[10px] font-bold text-gray-400 mb-1 flex items-center justify-between">
+            <span class="text-fc-cyan tracking-wider">PLAYER 2</span>
+            <span id="p2-badge" class="text-xs">🦁</span>
+          </label>
+          <select id="p2-select" class="w-full bg-fc-elevated text-white font-bold text-xs sm:text-sm rounded border border-fc-border px-2 py-1.5 focus:outline-none focus:border-fc-cyan">
+            <option value="amine">Amine 🐧</option>
+            <option value="mohammed" selected>Mohammed 🦁</option>
+            <option value="saad">Saad 🐼</option>
+            <option value="ayoub">Ayoub 🐐</option>
+            <option value="rita">Rita 🕊️</option>
+          </select>
+          <p id="p2-desc" class="text-[10px] leading-relaxed text-gray-400 italic mt-2 min-h-[72px]">The Box Predator. Doesn't waste touches—half a yard of space is all he needs to find the back of the net.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Dual Game Engine Toggles: Balanced & Classic Rivalries -->
+    <div class="grid grid-cols-2 gap-2">
+      <!-- Classic Rivalries Toggle -->
+      <button id="rivalry-toggle-btn" class="p-2.5 rounded-xl border border-fc-border bg-fc-surface text-left transition active:scale-95 flex flex-col justify-between">
+        <div class="flex items-center justify-between w-full mb-1">
+          <span class="text-xs font-bold text-gray-300 flex items-center gap-1.5" id="rivalry-title">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-fc-gold"></i>
+            <span>Derby Mode</span>
+          </span>
+          <span id="rivalry-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+        </div>
+        <div class="text-[10px] text-gray-400" id="rivalry-desc">Classic Rivalries: Off</div>
+      </button>
+
+      <!-- Power Matching Toggle -->
+      <button id="parity-toggle-btn" class="p-2.5 rounded-xl border border-fc-neon/50 bg-fc-neon/15 text-left transition active:scale-95 flex flex-col justify-between">
+        <div class="flex items-center justify-between w-full mb-1">
+          <span class="text-xs font-bold text-fc-neon flex items-center gap-1.5">
+            <i data-lucide="scale" class="w-3.5 h-3.5"></i>
+            <span id="parity-title">Balanced</span>
+          </span>
+          <span id="parity-status-dot" class="w-2 h-2 rounded-full bg-fc-neon"></span>
+        </div>
+        <div class="text-[10px] text-gray-400" id="parity-desc">±0.5★ & close stats</div>
+      </button>
+    </div>
+
+    <!-- 3. Country & League Filters (Cascading & Compact) -->
+    <div class="bg-fc-surface border border-fc-border rounded-xl p-3 shadow-card space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold tracking-wider text-gray-300 uppercase flex items-center gap-1.5">
+          <i data-lucide="globe-2" class="w-3.5 h-3.5 text-fc-cyan"></i>
+          Country & League Scope
+        </span>
+        <button id="reset-geo-filter-btn" class="text-[10px] text-gray-400 hover:text-white underline">
+          Reset All
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <!-- Country Select -->
+        <div>
+          <label class="text-[9.5px] font-bold text-gray-400 uppercase tracking-wide block mb-1">Country</label>
+          <select id="country-select" class="w-full bg-fc-pitch text-white text-xs rounded-lg border border-fc-border px-2 py-1.5 focus:outline-none focus:border-fc-cyan">
+            <option value="ALL">🌍 All Countries</option>
+          </select>
+        </div>
+
+        <!-- League Select -->
+        <div>
+          <label class="text-[9.5px] font-bold text-gray-400 uppercase tracking-wide block mb-1">League</label>
+          <select id="league-select" class="w-full bg-fc-pitch text-white text-xs rounded-lg border border-fc-border px-2 py-1.5 focus:outline-none focus:border-fc-cyan">
+            <option value="ALL">🏆 All Leagues</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Star Rating Engine (Between Sliders & Exact Chips) -->
+    <div class="bg-fc-surface border border-fc-border rounded-xl p-3 shadow-card space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold tracking-wider text-gray-300 uppercase flex items-center gap-1.5">
+          <i data-lucide="star" class="w-3.5 h-3.5 text-yellow-400 fill-yellow-400"></i>
+          Star Rating Filter
+        </span>
+        <div class="flex rounded-lg p-0.5 bg-fc-pitch border border-fc-border text-[10px] font-bold">
+          <button id="mode-range-btn" class="px-2.5 py-0.5 rounded bg-fc-elevated text-white">Range</button>
+          <button id="mode-exact-btn" class="px-2.5 py-0.5 rounded text-gray-400 hover:text-white">Exact</button>
+        </div>
+      </div>
+
+      <!-- Range Slider Controls -->
+      <div id="range-controls" class="space-y-2">
+        <div class="flex justify-between items-center bg-fc-pitch/70 px-2.5 py-1.5 rounded-lg border border-fc-border/60">
+          <span class="text-[11px] text-gray-400">Selected Bracket</span>
+          <span id="range-display" class="font-display font-bold text-sm text-fc-neon tracking-wide">3.5★ — 5.0★</span>
+        </div>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono text-gray-400 w-7">MIN</span>
+            <input type="range" id="star-min" min="0.5" max="5.0" step="0.5" value="3.5" class="w-full h-1.5 bg-fc-pitch rounded-lg accent-fc-neon">
+            <span id="star-min-val" class="text-[11px] font-bold font-mono text-white w-8 text-right">3.5★</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono text-gray-400 w-7">MAX</span>
+            <input type="range" id="star-max" min="0.5" max="5.0" step="0.5" value="5.0" class="w-full h-1.5 bg-fc-pitch rounded-lg accent-fc-neon">
+            <span id="star-max-val" class="text-[11px] font-bold font-mono text-white w-8 text-right">5.0★</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exact Chips View -->
+      <div id="exact-controls" class="hidden">
+        <div class="grid grid-cols-5 gap-1.5 pt-0.5" id="exact-chips-grid"></div>
+      </div>
+
+      <!-- Presets -->
+      <div class="flex gap-1.5 overflow-x-auto custom-scroll pt-1 text-[10px]">
+        <button class="preset-btn px-2 py-1 rounded bg-fc-pitch border border-fc-border whitespace-nowrap text-gray-300 font-semibold" data-min="0.5" data-max="5.0">Any (0.5-5★)</button>
+        <button class="preset-btn px-2 py-1 rounded bg-fc-pitch border border-fc-border whitespace-nowrap text-gray-300 font-semibold" data-min="4.5" data-max="5.0">👑 Giants (4.5-5★)</button>
+        <button class="preset-btn px-2 py-1 rounded bg-fc-pitch border border-fc-border whitespace-nowrap text-gray-300 font-semibold" data-min="3.5" data-max="4.0">⚖️ Mid-Table (3.5-4★)</button>
+        <button class="preset-btn px-2 py-1 rounded bg-fc-pitch border border-fc-border whitespace-nowrap text-gray-300 font-semibold" data-min="2.0" data-max="3.0">🔥 2nd Tier (2-3★)</button>
+        <button class="preset-btn px-2 py-1 rounded bg-fc-pitch border border-fc-border whitespace-nowrap text-gray-300 font-semibold" data-min="0.5" data-max="1.5">🌱 Grassroots (0.5-1.5★)</button>
+      </div>
+    </div>
+
+    <!-- 5. Matchup Cards Output -->
+    <div class="space-y-2 pt-1 pb-4">
+      
+      <!-- Player 1 Card -->
+      <div id="p1-card" class="relative bg-gradient-to-br from-fc-surface to-fc-elevated border-2 border-fc-neon/30 rounded-2xl p-3.5 shadow-card overflow-hidden transition-all duration-300">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase bg-fc-neon/20 text-fc-neon border border-fc-neon/40 font-mono">PLAYER 1</span>
+            <span id="p1-card-name" class="font-bold text-xs text-white">Amine 🐧</span>
+          </div>
+          <button id="p1-reroll-btn" class="p-1.5 rounded-lg bg-fc-pitch border border-fc-border text-gray-400 hover:text-fc-neon active:scale-90 transition" title="Reroll Player 1">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div>
+          <!-- Country • League Tag (No City) -->
+          <div id="p1-league-tag" class="text-[10px] font-mono font-bold tracking-wider text-fc-neon uppercase mb-0.5 truncate">
+            SPAIN • LA LIGA EA SPORTS
+          </div>
+          <div id="p1-team-name" class="text-xl sm:text-2xl font-black font-display tracking-tight text-white line-clamp-1">
+            Real Madrid
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div id="p1-stars" class="flex text-yellow-400 text-xs">★★★★★</div>
+            <span id="p1-star-num" class="text-[11px] font-mono font-bold text-gray-300">5.0★</span>
+          </div>
+        </div>
+
+        <!-- Attribute Badges -->
+        <div class="grid grid-cols-3 gap-1.5 mt-2.5 pt-2 border-t border-fc-border/60 text-center">
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">ATT</div>
+            <div id="p1-att" class="text-xs font-black font-mono text-white">85</div>
+          </div>
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">MID</div>
+            <div id="p1-mid" class="text-xs font-black font-mono text-white">85</div>
+          </div>
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">DEF</div>
+            <div id="p1-def" class="text-xs font-black font-mono text-white">84</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VS & Classic Rivalry Banner Separator -->
+      <div id="derby-indicator-wrapper" class="flex flex-col items-center justify-center -my-1 relative z-10">
+        <!-- Optional Derby Badge (Appears when a classic rivalry is picked) -->
+        <div id="derby-banner" class="hidden mb-1 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-fc-gold/30 to-amber-500/20 border border-fc-gold/60 text-fc-gold text-[10.5px] font-display font-black tracking-widest uppercase flex items-center gap-1.5 shadow-gold-glow animate-pulse">
+          <i data-lucide="zap" class="w-3.5 h-3.5 fill-fc-gold"></i>
+          <span id="derby-title-text">EL CLÁSICO</span>
+        </div>
+        <div class="bg-fc-pitch border border-fc-border px-3 py-0.5 rounded-full text-[10px] font-display font-black text-gray-400 shadow-md">
+          VS
+        </div>
+      </div>
+
+      <!-- Player 2 Card -->
+      <div id="p2-card" class="relative bg-gradient-to-br from-fc-surface to-fc-elevated border-2 border-fc-cyan/30 rounded-2xl p-3.5 shadow-card overflow-hidden transition-all duration-300">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase bg-fc-cyan/20 text-fc-cyan border border-fc-cyan/40 font-mono">PLAYER 2</span>
+            <span id="p2-card-name" class="font-bold text-xs text-white">Mohammed 🦁</span>
+          </div>
+          <button id="p2-reroll-btn" class="p-1.5 rounded-lg bg-fc-pitch border border-fc-border text-gray-400 hover:text-fc-cyan active:scale-90 transition" title="Reroll Player 2">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div>
+          <!-- Country • League Tag (No City) -->
+          <div id="p2-league-tag" class="text-[10px] font-mono font-bold tracking-wider text-fc-cyan uppercase mb-0.5 truncate">
+            ENGLAND • PREMIER LEAGUE
+          </div>
+          <div id="p2-team-name" class="text-xl sm:text-2xl font-black font-display tracking-tight text-white line-clamp-1">
+            Manchester City
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div id="p2-stars" class="flex text-yellow-400 text-xs">★★★★★</div>
+            <span id="p2-star-num" class="text-[11px] font-mono font-bold text-gray-300">5.0★</span>
+          </div>
+        </div>
+
+        <!-- Attribute Badges -->
+        <div class="grid grid-cols-3 gap-1.5 mt-2.5 pt-2 border-t border-fc-border/60 text-center">
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">ATT</div>
+            <div id="p2-att" class="text-xs font-black font-mono text-white">86</div>
+          </div>
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">MID</div>
+            <div id="p2-mid" class="text-xs font-black font-mono text-white">87</div>
+          </div>
+          <div class="bg-fc-pitch/60 rounded py-0.5 border border-fc-border/40">
+            <div class="text-[8.5px] text-gray-400 font-bold uppercase">DEF</div>
+            <div id="p2-def" class="text-xs font-black font-mono text-white">84</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Floating Mobile Roll Trigger (Safe Area Bottom) -->
+  <div class="fixed bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-fc-pitch via-fc-pitch/95 to-transparent z-30">
+    <div class="max-w-lg mx-auto">
+      <button id="roll-button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-fc-neon via-emerald-400 to-fc-cyan text-black font-display font-black text-lg tracking-wider uppercase shadow-neon-glow flex items-center justify-center gap-2 active:scale-98 transition transform">
+        <i data-lucide="dices" class="w-5 h-5 text-black"></i>
+        <span id="roll-button-text">ROLL 1V1 MATCHUP</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       1. PLAYERS REGISTRY
+       Amine 🐧, Mohammed 🦁, Saad 🐼, Ayoub 🐐, Rita 🕊️
+       ============================================================ */
+    const PLAYERS = {
+      amine: { name: 'Amine', emoji: '🐧', animal: 'Penguin', desc: 'The Chessmaster. Orchestrates the tempo, carving open backlines with sequence after sequence until the defense breaks.' },
+      mohammed: { name: 'Mohammed', emoji: '🦁', animal: 'Lion', desc: "The Box Predator. Doesn't waste touches—half a yard of space is all he needs to find the back of the net." },
+      saad: { name: 'Saad', emoji: '🐼', animal: 'Panda', desc: 'The Touchline Terror. Relentlessly hugs the boundaries, isolates fullbacks, and whips in inch-perfect crosses.' },
+      ayoub: { name: 'Ayoub', emoji: '🐐', animal: 'Goat', desc: 'Complete & Untouchable. Flawless in possession, impenetrable in defense, and lethal in front of goal. Pure class.' },
+      rita: { name: 'Rita', emoji: '🕊️', animal: 'Pigeon', desc: 'Radiant & Unmatched. The sweetest presence on and off the pitch—bringing pure warmth, sharp wit, and genuine heart to every game.' }
+    };
+
+    /* ============================================================
+       2. CURATED CLASSIC RIVALRIES (DERBIES)
+       Real-world derbies with their authentic names and clubs
+       ============================================================ */
+    const CLASSIC_RIVALRIES = [
+      // Spain
+      { name: "El Clásico", teams: ["Real Madrid", "FC Barcelona"], country: "Spain" },
+      { name: "El Derbi Madrileño", teams: ["Real Madrid", "Atlético de Madrid"], country: "Spain" },
+      { name: "El Gran Derbi", teams: ["Real Betis", "Sevilla FC"], country: "Spain" },
+      { name: "Basque Derby", teams: ["Athletic Club Bilbao", "Real Sociedad"], country: "Spain" },
+      { name: "Derbi Barceloní", teams: ["FC Barcelona", "RCD Espanyol"], country: "Spain" },
+
+      // England
+      { name: "North London Derby", teams: ["Arsenal", "Tottenham Hotspur"], country: "England" },
+      { name: "North West Derby", teams: ["Manchester United", "Liverpool"], country: "England" },
+      { name: "Manchester Derby", teams: ["Manchester City", "Manchester United"], country: "England" },
+      { name: "Modern Title Derby", teams: ["Manchester City", "Liverpool"], country: "England" },
+      { name: "London Heavyweight", teams: ["Arsenal", "Chelsea"], country: "England" },
+      { name: "Merseyside Derby", teams: ["Liverpool", "Everton"], country: "England" },
+      { name: "Steel City Derby", teams: ["Sheffield United", "Sheffield Wednesday"], country: "England" },
+      { name: "Second City Derby", teams: ["Aston Villa", "Birmingham City"], country: "England" },
+      { name: "Wear-Tyne Derby", teams: ["Newcastle United", "Sunderland"], country: "England" },
+
+      // Italy
+      { name: "Derby della Madonnina", teams: ["Inter", "Milan"], country: "Italy" },
+      { name: "Derby d'Italia", teams: ["Juventus", "Inter"], country: "Italy" },
+      { name: "Derby della Capitale", teams: ["Roma", "Lazio"], country: "Italy" },
+      { name: "Derby della Mole", teams: ["Juventus", "Torino"], country: "Italy" },
+
+      // Germany
+      { name: "Der Klassiker", teams: ["Bayern München", "Borussia Dortmund"], country: "Germany" },
+      { name: "Revierderby", teams: ["Borussia Dortmund", "FC Schalke 04"], country: "Germany" },
+      { name: "Rhine Derby", teams: ["Bayer 04 Leverkusen", "1. FC Köln"], country: "Germany" },
+
+      // France
+      { name: "Le Classique", teams: ["Paris Saint-Germain", "Olympique de Marseille"], country: "France" },
+      { name: "Choc des Olympiques", teams: ["Olympique Lyonnais", "Olympique de Marseille"], country: "France" },
+      { name: "Derby du Rhône", teams: ["Olympique Lyonnais", "AS Saint-Étienne"], country: "France" },
+
+      // Scotland
+      { name: "The Old Firm", teams: ["Celtic", "Rangers"], country: "Scotland" },
+      { name: "Edinburgh Derby", teams: ["Hearts", "Hibernian"], country: "Scotland" },
+
+      // Portugal
+      { name: "O Clássico", teams: ["SL Benfica", "FC Porto"], country: "Portugal" },
+      { name: "Derby de Lisboa", teams: ["Sporting CP", "SL Benfica"], country: "Portugal" },
+
+      // Netherlands
+      { name: "De Klassieker", teams: ["AFC Ajax", "Feyenoord"], country: "Netherlands" },
+      { name: "De Topper", teams: ["AFC Ajax", "PSV Eindhoven"], country: "Netherlands" },
+
+      // Turkey
+      { name: "Kıtalararası Derbi", teams: ["Galatasaray", "Fenerbahçe"], country: "Turkey" },
+      { name: "Beşiktaş-Fenerbahçe Rivalry", teams: ["Beşiktaş", "Fenerbahçe"], country: "Turkey" },
+      { name: "Beşiktaş-Galatasaray Derby", teams: ["Beşiktaş", "Galatasaray"], country: "Turkey" },
+
+      // Saudi Arabia
+      { name: "Riyadh Derby", teams: ["Al Hilal", "Al Nassr"], country: "Saudi Arabia" },
+      { name: "Saudi Clásico", teams: ["Al Hilal", "Al Ittihad"], country: "Saudi Arabia" },
+      { name: "Jeddah Derby", teams: ["Al Ittihad", "Al Ahli"], country: "Saudi Arabia" },
+
+      // Americas
+      { name: "Superclásico", teams: ["River Plate", "Boca Juniors"], country: "Argentina" },
+      { name: "El Tráfico", teams: ["Los Angeles FC", "LA Galaxy"], country: "United States" },
+
+      // Belgium
+      { name: "Topper van België", teams: ["Club Brugge", "RSC Anderlecht"], country: "Belgium" },
+      { name: "Brussels Derby", teams: ["RSC Anderlecht", "Royale Union Saint-Gilloise"], country: "Belgium" },
+
+      // International
+      { name: "Superclásico de las Américas", teams: ["Brazil", "Argentina"], country: "International" },
+      { name: "European Heavyweight Derby", teams: ["France", "England"], country: "International" },
+      { name: "Battle of the Titans", teams: ["Germany", "Spain"], country: "International" }
+    ];
+
+    /* ============================================================
+       3. COMPLETE AUDITED 720+ SQUADS DATABASE
+       Covering all 35+ real EA Sports FC licensed leagues
+       ============================================================ */
+    const TEAMS_DATABASE = [
+      // ENGLAND - PREMIER LEAGUE (20 Teams)
+      { name: "Arsenal", country: "England", league: "Premier League", stars: 5.0, att: 83, mid: 85, def: 82 },
+      { name: "Manchester City", country: "England", league: "Premier League", stars: 5.0, att: 86, mid: 87, def: 84 },
+      { name: "Liverpool", country: "England", league: "Premier League", stars: 5.0, att: 84, mid: 80, def: 83 },
+      { name: "Aston Villa", country: "England", league: "Premier League", stars: 4.5, att: 83, mid: 79, def: 78 },
+      { name: "Tottenham Hotspur", country: "England", league: "Premier League", stars: 4.5, att: 81, mid: 81, def: 80 },
+      { name: "Chelsea", country: "England", league: "Premier League", stars: 4.5, att: 81, mid: 79, def: 79 },
+      { name: "Newcastle United", country: "England", league: "Premier League", stars: 4.5, att: 80, mid: 80, def: 78 },
+      { name: "Manchester United", country: "England", league: "Premier League", stars: 4.5, att: 80, mid: 79, def: 81 },
+      { name: "West Ham United", country: "England", league: "Premier League", stars: 4.0, att: 78, mid: 80, def: 78 },
+      { name: "Brighton & Hove Albion", country: "England", league: "Premier League", stars: 4.0, att: 77, mid: 79, def: 76 },
+      { name: "Crystal Palace", country: "England", league: "Premier League", stars: 4.0, att: 76, mid: 77, def: 78 },
+      { name: "Fulham", country: "England", league: "Premier League", stars: 4.0, att: 77, mid: 77, def: 77 },
+      { name: "Brentford", country: "England", league: "Premier League", stars: 4.0, att: 78, mid: 76, def: 76 },
+      { name: "AFC Bournemouth", country: "England", league: "Premier League", stars: 4.0, att: 76, mid: 76, def: 76 },
+      { name: "Everton", country: "England", league: "Premier League", stars: 4.0, att: 76, mid: 76, def: 77 },
+      { name: "Wolverhampton Wanderers", country: "England", league: "Premier League", stars: 4.0, att: 77, mid: 77, def: 76 },
+      { name: "Nottingham Forest", country: "England", league: "Premier League", stars: 4.0, att: 76, mid: 76, def: 76 },
+      { name: "Leicester City", country: "England", league: "Premier League", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "Ipswich Town", country: "England", league: "Premier League", stars: 3.5, att: 74, mid: 73, def: 73 },
+      { name: "Southampton", country: "England", league: "Premier League", stars: 3.5, att: 73, mid: 74, def: 73 },
+
+      // SPAIN - LA LIGA EA SPORTS (20 Teams)
+      { name: "Real Madrid", country: "Spain", league: "La Liga EA Sports", stars: 5.0, att: 85, mid: 85, def: 84 },
+      { name: "FC Barcelona", country: "Spain", league: "La Liga EA Sports", stars: 5.0, att: 84, mid: 84, def: 84 },
+      { name: "Atlético de Madrid", country: "Spain", league: "La Liga EA Sports", stars: 4.5, att: 84, mid: 83, def: 81 },
+      { name: "Athletic Club Bilbao", country: "Spain", league: "La Liga EA Sports", stars: 4.5, att: 79, mid: 80, def: 79 },
+      { name: "Real Sociedad", country: "Spain", league: "La Liga EA Sports", stars: 4.5, att: 79, mid: 82, def: 80 },
+      { name: "Girona FC", country: "Spain", league: "La Liga EA Sports", stars: 4.5, att: 79, mid: 80, def: 79 },
+      { name: "Real Betis", country: "Spain", league: "La Liga EA Sports", stars: 4.0, att: 77, mid: 79, def: 76 },
+      { name: "Villarreal CF", country: "Spain", league: "La Liga EA Sports", stars: 4.0, att: 79, mid: 78, def: 77 },
+      { name: "Sevilla FC", country: "Spain", league: "La Liga EA Sports", stars: 4.0, att: 78, mid: 77, def: 78 },
+      { name: "Valencia CF", country: "Spain", league: "La Liga EA Sports", stars: 4.0, att: 76, mid: 76, def: 76 },
+      { name: "RC Celta de Vigo", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 77, mid: 75, def: 74 },
+      { name: "CA Osasuna", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 76, mid: 75, def: 75 },
+      { name: "RCD Mallorca", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 74, mid: 74, def: 75 },
+      { name: "Getafe CF", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 73, mid: 74, def: 75 },
+      { name: "Rayo Vallecano", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 74, mid: 74, def: 74 },
+      { name: "Deportivo Alavés", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 73, mid: 74, def: 73 },
+      { name: "UD Las Palmas", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 74, mid: 73, def: 73 },
+      { name: "RCD Espanyol", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 73, mid: 73, def: 73 },
+      { name: "CD Leganés", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 72, mid: 73, def: 73 },
+      { name: "Real Valladolid", country: "Spain", league: "La Liga EA Sports", stars: 3.5, att: 72, mid: 72, def: 73 },
+
+      // GERMANY - BUNDESLIGA (18 Teams)
+      { name: "Bayern München", country: "Germany", league: "Bundesliga", stars: 5.0, att: 89, mid: 84, def: 83 },
+      { name: "Bayer 04 Leverkusen", country: "Germany", league: "Bundesliga", stars: 5.0, att: 83, mid: 84, def: 82 },
+      { name: "Borussia Dortmund", country: "Germany", league: "Bundesliga", stars: 4.5, att: 81, mid: 82, def: 81 },
+      { name: "RB Leipzig", country: "Germany", league: "Bundesliga", stars: 4.5, att: 81, mid: 80, def: 80 },
+      { name: "VfB Stuttgart", country: "Germany", league: "Bundesliga", stars: 4.5, att: 80, mid: 79, def: 78 },
+      { name: "Eintracht Frankfurt", country: "Germany", league: "Bundesliga", stars: 4.0, att: 78, mid: 78, def: 77 },
+      { name: "SC Freiburg", country: "Germany", league: "Bundesliga", stars: 4.0, att: 76, mid: 77, def: 76 },
+      { name: "VfL Wolfsburg", country: "Germany", league: "Bundesliga", stars: 4.0, att: 77, mid: 76, def: 76 },
+      { name: "Borussia Mönchengladbach", country: "Germany", league: "Bundesliga", stars: 4.0, att: 77, mid: 76, def: 76 },
+      { name: "TSG Hoffenheim", country: "Germany", league: "Bundesliga", stars: 4.0, att: 78, mid: 76, def: 75 },
+      { name: "SV Werder Bremen", country: "Germany", league: "Bundesliga", stars: 3.5, att: 76, mid: 75, def: 74 },
+      { name: "1. FC Union Berlin", country: "Germany", league: "Bundesliga", stars: 3.5, att: 75, mid: 75, def: 76 },
+      { name: "1. FSV Mainz 05", country: "Germany", league: "Bundesliga", stars: 3.5, att: 75, mid: 75, def: 75 },
+      { name: "FC Augsburg", country: "Germany", league: "Bundesliga", stars: 3.5, att: 74, mid: 74, def: 74 },
+      { name: "1. FC Heidenheim", country: "Germany", league: "Bundesliga", stars: 3.5, att: 74, mid: 73, def: 73 },
+      { name: "FC St. Pauli", country: "Germany", league: "Bundesliga", stars: 3.0, att: 72, mid: 73, def: 72 },
+      { name: "VfL Bochum", country: "Germany", league: "Bundesliga", stars: 3.0, att: 73, mid: 72, def: 73 },
+      { name: "Holstein Kiel", country: "Germany", league: "Bundesliga", stars: 3.0, att: 72, mid: 72, def: 71 },
+
+      // ITALY - SERIE A (20 Teams)
+      { name: "Inter", country: "Italy", league: "Serie A", stars: 5.0, att: 84, mid: 84, def: 83 },
+      { name: "Juventus", country: "Italy", league: "Serie A", stars: 4.5, att: 81, mid: 81, def: 81 },
+      { name: "Milan", country: "Italy", league: "Serie A", stars: 4.5, att: 80, mid: 81, def: 81 },
+      { name: "Atalanta", country: "Italy", league: "Serie A", stars: 4.5, att: 81, mid: 80, def: 79 },
+      { name: "Napoli", country: "Italy", league: "Serie A", stars: 4.5, att: 82, mid: 80, def: 79 },
+      { name: "Roma", country: "Italy", league: "Serie A", stars: 4.5, att: 82, mid: 80, def: 79 },
+      { name: "Lazio", country: "Italy", league: "Serie A", stars: 4.5, att: 80, mid: 79, def: 79 },
+      { name: "Fiorentina", country: "Italy", league: "Serie A", stars: 4.0, att: 78, mid: 78, def: 77 },
+      { name: "Bologna", country: "Italy", league: "Serie A", stars: 4.0, att: 77, mid: 77, def: 78 },
+      { name: "Torino", country: "Italy", league: "Serie A", stars: 4.0, att: 76, mid: 77, def: 77 },
+      { name: "Genoa", country: "Italy", league: "Serie A", stars: 3.5, att: 75, mid: 74, def: 75 },
+      { name: "Udinese", country: "Italy", league: "Serie A", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "Parma", country: "Italy", league: "Serie A", stars: 3.5, att: 74, mid: 74, def: 73 },
+      { name: "Cagliari", country: "Italy", league: "Serie A", stars: 3.5, att: 74, mid: 74, def: 74 },
+      { name: "Empoli", country: "Italy", league: "Serie A", stars: 3.5, att: 73, mid: 73, def: 74 },
+      { name: "Hellas Verona", country: "Italy", league: "Serie A", stars: 3.5, att: 73, mid: 74, def: 73 },
+      { name: "Lecce", country: "Italy", league: "Serie A", stars: 3.5, att: 74, mid: 73, def: 74 },
+      { name: "Como 1907", country: "Italy", league: "Serie A", stars: 3.5, att: 74, mid: 74, def: 73 },
+      { name: "Monza", country: "Italy", league: "Serie A", stars: 3.5, att: 73, mid: 74, def: 74 },
+      { name: "Venezia", country: "Italy", league: "Serie A", stars: 3.0, att: 72, mid: 72, def: 72 },
+
+      // FRANCE - LIGUE 1 (18 Teams)
+      { name: "Paris Saint-Germain", country: "France", league: "Ligue 1", stars: 5.0, att: 84, mid: 82, def: 81 },
+      { name: "AS Monaco", country: "France", league: "Ligue 1", stars: 4.5, att: 80, mid: 79, def: 78 },
+      { name: "Olympique de Marseille", country: "France", league: "Ligue 1", stars: 4.0, att: 79, mid: 78, def: 78 },
+      { name: "LOSC Lille", country: "France", league: "Ligue 1", stars: 4.0, att: 78, mid: 78, def: 77 },
+      { name: "Olympique Lyonnais", country: "France", league: "Ligue 1", stars: 4.0, att: 79, mid: 77, def: 76 },
+      { name: "OGC Nice", country: "France", league: "Ligue 1", stars: 4.0, att: 77, mid: 77, def: 78 },
+      { name: "RC Lens", country: "France", league: "Ligue 1", stars: 4.0, att: 77, mid: 77, def: 77 },
+      { name: "Stade Rennais FC", country: "France", league: "Ligue 1", stars: 4.0, att: 76, mid: 77, def: 76 },
+      { name: "Stade Brestois 29", country: "France", league: "Ligue 1", stars: 3.5, att: 76, mid: 76, def: 75 },
+      { name: "Stade de Reims", country: "France", league: "Ligue 1", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "RC Strasbourg", country: "France", league: "Ligue 1", stars: 3.5, att: 75, mid: 74, def: 74 },
+      { name: "Toulouse FC", country: "France", league: "Ligue 1", stars: 3.5, att: 74, mid: 75, def: 74 },
+      { name: "FC Nantes", country: "France", league: "Ligue 1", stars: 3.5, att: 74, mid: 74, def: 74 },
+      { name: "Montpellier HSC", country: "France", league: "Ligue 1", stars: 3.5, att: 75, mid: 74, def: 73 },
+      { name: "AJ Auxerre", country: "France", league: "Ligue 1", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "AS Saint-Étienne", country: "France", league: "Ligue 1", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Le Havre AC", country: "France", league: "Ligue 1", stars: 3.0, att: 71, mid: 72, def: 72 },
+      { name: "Angers SCO", country: "France", league: "Ligue 1", stars: 3.0, att: 71, mid: 71, def: 71 },
+
+      // BELGIUM - JUPILER PRO LEAGUE (16 Teams)
+      { name: "Club Brugge", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 76, mid: 76, def: 75 },
+      { name: "RSC Anderlecht", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "Royale Union Saint-Gilloise", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "KRC Genk", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 75, mid: 74, def: 74 },
+      { name: "KAA Gent", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 74, mid: 74, def: 73 },
+      { name: "Royal Antwerp FC", country: "Belgium", league: "Jupiler Pro League", stars: 3.5, att: 74, mid: 74, def: 73 },
+      { name: "Cercle Brugge", country: "Belgium", league: "Jupiler Pro League", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "KV Mechelen", country: "Belgium", league: "Jupiler Pro League", stars: 3.0, att: 71, mid: 72, def: 71 },
+      { name: "Standard Liège", country: "Belgium", league: "Jupiler Pro League", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Sporting Charleroi", country: "Belgium", league: "Jupiler Pro League", stars: 3.0, att: 71, mid: 70, def: 70 },
+      { name: "Sint-Truidense VV", country: "Belgium", league: "Jupiler Pro League", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "KVC Westerlo", country: "Belgium", league: "Jupiler Pro League", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "OH Leuven", country: "Belgium", league: "Jupiler Pro League", stars: 2.5, att: 69, mid: 70, def: 69 },
+      { name: "KV Kortrijk", country: "Belgium", league: "Jupiler Pro League", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "FCV Dender EH", country: "Belgium", league: "Jupiler Pro League", stars: 2.0, att: 67, mid: 67, def: 67 },
+      { name: "Beerschot", country: "Belgium", league: "Jupiler Pro League", stars: 2.0, att: 66, mid: 66, def: 66 },
+
+      // PORTUGAL - LIGA PORTUGAL (18 Teams)
+      { name: "Sporting CP", country: "Portugal", league: "Liga Portugal", stars: 4.5, att: 81, mid: 79, def: 78 },
+      { name: "SL Benfica", country: "Portugal", league: "Liga Portugal", stars: 4.5, att: 80, mid: 80, def: 79 },
+      { name: "FC Porto", country: "Portugal", league: "Liga Portugal", stars: 4.5, att: 79, mid: 78, def: 78 },
+      { name: "SC Braga", country: "Portugal", league: "Liga Portugal", stars: 3.5, att: 77, mid: 76, def: 75 },
+      { name: "Vitória Guimarães", country: "Portugal", league: "Liga Portugal", stars: 3.0, att: 73, mid: 74, def: 73 },
+      { name: "FC Famalicão", country: "Portugal", league: "Liga Portugal", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "FC Arouca", country: "Portugal", league: "Liga Portugal", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Rio Ave FC", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "Gil Vicente FC", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Moreirense FC", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Boavista FC", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Estoril Praia", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Casa Pia AC", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Farense", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Nacional da Madeira", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "AVS Futebol SAD", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "Estrela da Amadora", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "CD Santa Clara", country: "Portugal", league: "Liga Portugal", stars: 2.5, att: 67, mid: 67, def: 67 },
+
+      // NETHERLANDS - EREDIVISIE (18 Teams)
+      { name: "PSV Eindhoven", country: "Netherlands", league: "Eredivisie", stars: 4.0, att: 80, mid: 79, def: 78 },
+      { name: "Feyenoord", country: "Netherlands", league: "Eredivisie", stars: 4.0, att: 78, mid: 78, def: 78 },
+      { name: "AFC Ajax", country: "Netherlands", league: "Eredivisie", stars: 4.0, att: 78, mid: 77, def: 76 },
+      { name: "AZ Alkmaar", country: "Netherlands", league: "Eredivisie", stars: 3.5, att: 76, mid: 75, def: 74 },
+      { name: "FC Twente", country: "Netherlands", league: "Eredivisie", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "FC Utrecht", country: "Netherlands", league: "Eredivisie", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Go Ahead Eagles", country: "Netherlands", league: "Eredivisie", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "NEC Nijmegen", country: "Netherlands", league: "Eredivisie", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "SC Heerenveen", country: "Netherlands", league: "Eredivisie", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Sparta Rotterdam", country: "Netherlands", league: "Eredivisie", stars: 3.0, att: 71, mid: 71, def: 70 },
+      { name: "Fortuna Sittard", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "PEC Zwolle", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 69, mid: 70, def: 69 },
+      { name: "Heracles Almelo", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "NAC Breda", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Willem II", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "FC Groningen", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Almere City FC", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 67, mid: 68, def: 67 },
+      { name: "RKC Waalwijk", country: "Netherlands", league: "Eredivisie", stars: 2.5, att: 67, mid: 67, def: 67 },
+
+      // TURKEY - SÜPER LIG (19 Teams)
+      { name: "Galatasaray", country: "Turkey", league: "Süper Lig", stars: 4.0, att: 81, mid: 78, def: 77 },
+      { name: "Fenerbahçe", country: "Turkey", league: "Süper Lig", stars: 4.0, att: 80, mid: 78, def: 78 },
+      { name: "Beşiktaş", country: "Turkey", league: "Süper Lig", stars: 4.0, att: 79, mid: 77, def: 76 },
+      { name: "Trabzonspor", country: "Turkey", league: "Süper Lig", stars: 3.5, att: 76, mid: 75, def: 75 },
+      { name: "Istanbul Başakşehir", country: "Turkey", league: "Süper Lig", stars: 3.5, att: 75, mid: 74, def: 74 },
+      { name: "Samsunspor", country: "Turkey", league: "Süper Lig", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Eyüpspor", country: "Turkey", league: "Süper Lig", stars: 3.0, att: 73, mid: 72, def: 71 },
+      { name: "Göztepe", country: "Turkey", league: "Süper Lig", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Antalyaspor", country: "Turkey", league: "Süper Lig", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Kasımpaşa", country: "Turkey", league: "Süper Lig", stars: 3.0, att: 72, mid: 71, def: 70 },
+      { name: "Alanyaspor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "Sivasspor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "Rizespor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Kayserispor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Gaziantep FK", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Konyaspor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Bodrum FK", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Hatayspor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Adana Demirspor", country: "Turkey", league: "Süper Lig", stars: 2.5, att: 67, mid: 67, def: 67 },
+
+      // SCOTLAND - SCOTTISH PREMIERSHIP (12 Teams)
+      { name: "Celtic", country: "Scotland", league: "Scottish Premiership", stars: 3.5, att: 76, mid: 76, def: 75 },
+      { name: "Rangers", country: "Scotland", league: "Scottish Premiership", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "Hearts", country: "Scotland", league: "Scottish Premiership", stars: 3.0, att: 71, mid: 70, def: 70 },
+      { name: "Aberdeen", country: "Scotland", league: "Scottish Premiership", stars: 3.0, att: 71, mid: 70, def: 70 },
+      { name: "Hibernian", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Kilmarnock", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 69, mid: 68, def: 68 },
+      { name: "Dundee FC", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Dundee United", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "Motherwell", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "St. Mirren", country: "Scotland", league: "Scottish Premiership", stars: 2.5, att: 67, mid: 67, def: 67 },
+      { name: "St. Johnstone", country: "Scotland", league: "Scottish Premiership", stars: 2.0, att: 66, mid: 66, def: 65 },
+      { name: "Ross County", country: "Scotland", league: "Scottish Premiership", stars: 2.0, att: 66, mid: 65, def: 65 },
+
+      // SAUDI ARABIA - SAUDI PRO LEAGUE (18 Teams)
+      { name: "Al Hilal", country: "Saudi Arabia", league: "Saudi Pro League", stars: 4.5, att: 82, mid: 81, def: 80 },
+      { name: "Al Nassr", country: "Saudi Arabia", league: "Saudi Pro League", stars: 4.5, att: 83, mid: 79, def: 78 },
+      { name: "Al Ittihad", country: "Saudi Arabia", league: "Saudi Pro League", stars: 4.5, att: 82, mid: 80, def: 77 },
+      { name: "Al Ahli", country: "Saudi Arabia", league: "Saudi Pro League", stars: 4.0, att: 81, mid: 78, def: 77 },
+      { name: "Al Qadsiah", country: "Saudi Arabia", league: "Saudi Pro League", stars: 3.5, att: 76, mid: 75, def: 74 },
+      { name: "Al Shabab", country: "Saudi Arabia", league: "Saudi Pro League", stars: 3.5, att: 75, mid: 74, def: 73 },
+      { name: "Al Taawoun", country: "Saudi Arabia", league: "Saudi Pro League", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Al Fateh", country: "Saudi Arabia", league: "Saudi Pro League", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Al Ettifaq", country: "Saudi Arabia", league: "Saudi Pro League", stars: 3.0, att: 73, mid: 72, def: 71 },
+      { name: "Damac FC", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Al Fayha", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Al Khaleej", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Al Raed", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Al Riyadh", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Al Wehda", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Al Orobah", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 67, mid: 67, def: 67 },
+      { name: "Al Kholood", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 67, mid: 67, def: 66 },
+      { name: "Al Akhdoud", country: "Saudi Arabia", league: "Saudi Pro League", stars: 2.5, att: 67, mid: 66, def: 66 },
+
+      // USA - MAJOR LEAGUE SOCCER (29 Teams)
+      { name: "Inter Miami CF", country: "United States", league: "MLS", stars: 3.5, att: 81, mid: 76, def: 73 },
+      { name: "Los Angeles FC", country: "United States", league: "MLS", stars: 3.5, att: 77, mid: 75, def: 74 },
+      { name: "Columbus Crew", country: "United States", league: "MLS", stars: 3.5, att: 76, mid: 75, def: 74 },
+      { name: "LA Galaxy", country: "United States", league: "MLS", stars: 3.5, att: 77, mid: 75, def: 73 },
+      { name: "Seattle Sounders FC", country: "United States", league: "MLS", stars: 3.5, att: 75, mid: 74, def: 74 },
+      { name: "FC Cincinnati", country: "United States", league: "MLS", stars: 3.5, att: 75, mid: 74, def: 74 },
+      { name: "Philadelphia Union", country: "United States", league: "MLS", stars: 3.0, att: 73, mid: 73, def: 73 },
+      { name: "New York Red Bulls", country: "United States", league: "MLS", stars: 3.0, att: 73, mid: 73, def: 73 },
+      { name: "Atlanta United FC", country: "United States", league: "MLS", stars: 3.0, att: 74, mid: 72, def: 72 },
+      { name: "Portland Timbers", country: "United States", league: "MLS", stars: 3.0, att: 74, mid: 72, def: 71 },
+      { name: "Orlando City SC", country: "United States", league: "MLS", stars: 3.0, att: 73, mid: 72, def: 72 },
+      { name: "Houston Dynamo FC", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 73, def: 72 },
+      { name: "Minnesota United FC", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Austin FC", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Real Salt Lake", country: "United States", league: "MLS", stars: 3.0, att: 73, mid: 72, def: 71 },
+      { name: "Nashville SC", country: "United States", league: "MLS", stars: 3.0, att: 73, mid: 71, def: 72 },
+      { name: "Charlotte FC", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "New York City FC", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "St. Louis CITY SC", country: "United States", league: "MLS", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Vancouver Whitecaps", country: "United States", league: "MLS", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Sporting Kansas City", country: "United States", league: "MLS", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "FC Dallas", country: "United States", league: "MLS", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "CF Montréal", country: "United States", league: "MLS", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "D.C. United", country: "United States", league: "MLS", stars: 2.5, att: 71, mid: 69, def: 69 },
+      { name: "Chicago Fire FC", country: "United States", league: "MLS", stars: 2.5, att: 71, mid: 69, def: 69 },
+      { name: "Toronto FC", country: "United States", league: "MLS", stars: 2.5, att: 72, mid: 69, def: 68 },
+      { name: "San Jose Earthquakes", country: "United States", league: "MLS", stars: 2.5, att: 70, mid: 69, def: 68 },
+      { name: "New England Revolution", country: "United States", league: "MLS", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Colorado Rapids", country: "United States", league: "MLS", stars: 2.5, att: 70, mid: 69, def: 69 },
+
+      // ENGLAND - EFL CHAMPIONSHIP (24 Teams)
+      { name: "Leeds United", country: "England", league: "EFL Championship", stars: 3.5, att: 75, mid: 75, def: 74 },
+      { name: "Burnley", country: "England", league: "EFL Championship", stars: 3.5, att: 74, mid: 75, def: 74 },
+      { name: "Sheffield United", country: "England", league: "EFL Championship", stars: 3.5, att: 74, mid: 74, def: 74 },
+      { name: "Luton Town", country: "England", league: "EFL Championship", stars: 3.5, att: 74, mid: 73, def: 73 },
+      { name: "Middlesbrough", country: "England", league: "EFL Championship", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Sunderland", country: "England", league: "EFL Championship", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "West Bromwich Albion", country: "England", league: "EFL Championship", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Norwich City", country: "England", league: "EFL Championship", stars: 3.0, att: 73, mid: 72, def: 72 },
+      { name: "Coventry City", country: "England", league: "EFL Championship", stars: 3.0, att: 73, mid: 72, def: 72 },
+      { name: "Bristol City", country: "England", league: "EFL Championship", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Watford", country: "England", league: "EFL Championship", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Stoke City", country: "England", league: "EFL Championship", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Millwall", country: "England", league: "EFL Championship", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Swansea City", country: "England", league: "EFL Championship", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Blackburn Rovers", country: "England", league: "EFL Championship", stars: 3.0, att: 71, mid: 71, def: 70 },
+      { name: "Queens Park Rangers", country: "England", league: "EFL Championship", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Preston North End", country: "England", league: "EFL Championship", stars: 3.0, att: 71, mid: 71, def: 71 },
+      { name: "Hull City", country: "England", league: "EFL Championship", stars: 3.0, att: 72, mid: 71, def: 70 },
+      { name: "Sheffield Wednesday", country: "England", league: "EFL Championship", stars: 3.0, att: 71, mid: 70, def: 70 },
+      { name: "Derby County", country: "England", league: "EFL Championship", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Portsmouth", country: "England", league: "EFL Championship", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Oxford United", country: "England", league: "EFL Championship", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Cardiff City", country: "England", league: "EFL Championship", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Plymouth Argyle", country: "England", league: "EFL Championship", stars: 2.5, att: 70, mid: 69, def: 68 },
+
+      // ENGLAND - EFL LEAGUE ONE (24 Teams)
+      { name: "Birmingham City", country: "England", league: "EFL League One", stars: 2.5, att: 72, mid: 71, def: 70 },
+      { name: "Wrexham AFC", country: "England", league: "EFL League One", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Huddersfield Town", country: "England", league: "EFL League One", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Bolton Wanderers", country: "England", league: "EFL League One", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Peterborough United", country: "England", league: "EFL League One", stars: 2.5, att: 69, mid: 68, def: 68 },
+      { name: "Barnsley", country: "England", league: "EFL League One", stars: 2.5, att: 69, mid: 68, def: 67 },
+      { name: "Rotherham United", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Charlton Athletic", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Blackpool", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 68, def: 67 },
+      { name: "Wycombe Wanderers", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "Reading", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "Lincoln City", country: "England", league: "EFL League One", stars: 2.5, att: 67, mid: 67, def: 67 },
+      { name: "Stockport County", country: "England", league: "EFL League One", stars: 2.5, att: 68, mid: 67, def: 66 },
+      { name: "Mansfield Town", country: "England", league: "EFL League One", stars: 2.0, att: 66, mid: 66, def: 66 },
+      { name: "Wigan Athletic", country: "England", league: "EFL League One", stars: 2.0, att: 66, mid: 66, def: 66 },
+      { name: "Leyton Orient", country: "England", league: "EFL League One", stars: 2.0, att: 66, mid: 66, def: 65 },
+      { name: "Exeter City", country: "England", league: "EFL League One", stars: 2.0, att: 66, mid: 65, def: 65 },
+      { name: "Bristol Rovers", country: "England", league: "EFL League One", stars: 2.0, att: 65, mid: 65, def: 65 },
+      { name: "Stevenage", country: "England", league: "EFL League One", stars: 2.0, att: 65, mid: 65, def: 65 },
+      { name: "Northampton Town", country: "England", league: "EFL League One", stars: 2.0, att: 65, mid: 65, def: 65 },
+      { name: "Burton Albion", country: "England", league: "EFL League One", stars: 2.0, att: 64, mid: 64, def: 64 },
+      { name: "Cambridge United", country: "England", league: "EFL League One", stars: 2.0, att: 64, mid: 64, def: 64 },
+      { name: "Crawley Town", country: "England", league: "EFL League One", stars: 1.5, att: 63, mid: 63, def: 63 },
+      { name: "Shrewsbury Town", country: "England", league: "EFL League One", stars: 1.5, att: 63, mid: 63, def: 63 },
+
+      // ENGLAND - EFL LEAGUE TWO (24 Teams)
+      { name: "Chesterfield", country: "England", league: "EFL League Two", stars: 1.5, att: 65, mid: 64, def: 64 },
+      { name: "MK Dons", country: "England", league: "EFL League Two", stars: 1.5, att: 64, mid: 64, def: 64 },
+      { name: "Notts County", country: "England", league: "EFL League Two", stars: 1.5, att: 65, mid: 63, def: 63 },
+      { name: "Doncaster Rovers", country: "England", league: "EFL League Two", stars: 1.5, att: 64, mid: 63, def: 63 },
+      { name: "Gillingham", country: "England", league: "EFL League Two", stars: 1.5, att: 64, mid: 63, def: 63 },
+      { name: "Bradford City", country: "England", league: "EFL League Two", stars: 1.5, att: 64, mid: 63, def: 63 },
+      { name: "Salford City", country: "England", league: "EFL League Two", stars: 1.5, att: 63, mid: 63, def: 63 },
+      { name: "Port Vale", country: "England", league: "EFL League Two", stars: 1.5, att: 63, mid: 63, def: 63 },
+      { name: "Carlisle United", country: "England", league: "EFL League Two", stars: 1.5, att: 63, mid: 63, def: 62 },
+      { name: "Fleetwood Town", country: "England", league: "EFL League Two", stars: 1.5, att: 63, mid: 62, def: 62 },
+      { name: "Walsall", country: "England", league: "EFL League Two", stars: 1.5, att: 63, mid: 62, def: 62 },
+      { name: "Crewe Alexandra", country: "England", league: "EFL League Two", stars: 1.5, att: 62, mid: 62, def: 62 },
+      { name: "Barrow", country: "England", league: "EFL League Two", stars: 1.5, att: 62, mid: 62, def: 62 },
+      { name: "AFC Wimbledon", country: "England", league: "EFL League Two", stars: 1.5, att: 62, mid: 62, def: 62 },
+      { name: "Grimsby Town", country: "England", league: "EFL League Two", stars: 1.5, att: 62, mid: 61, def: 61 },
+      { name: "Tranmere Rovers", country: "England", league: "EFL League Two", stars: 1.5, att: 62, mid: 61, def: 61 },
+      { name: "Cheltenham Town", country: "England", league: "EFL League Two", stars: 1.5, att: 61, mid: 61, def: 61 },
+      { name: "Harrogate Town", country: "England", league: "EFL League Two", stars: 1.5, att: 61, mid: 61, def: 61 },
+      { name: "Newport County", country: "England", league: "EFL League Two", stars: 1.5, att: 61, mid: 60, def: 60 },
+      { name: "Swindon Town", country: "England", league: "EFL League Two", stars: 1.5, att: 61, mid: 60, def: 60 },
+      { name: "Bromley", country: "England", league: "EFL League Two", stars: 1.0, att: 60, mid: 60, def: 60 },
+      { name: "Colchester United", country: "England", league: "EFL League Two", stars: 1.0, att: 60, mid: 60, def: 59 },
+      { name: "Accrington Stanley", country: "England", league: "EFL League Two", stars: 1.0, att: 60, mid: 59, def: 59 },
+      { name: "Morecambe", country: "England", league: "EFL League Two", stars: 1.0, att: 59, mid: 59, def: 59 },
+
+      // SPAIN - LA LIGA HYPERMOTION (22 Teams)
+      { name: "Almería", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 74, mid: 73, def: 72 },
+      { name: "Granada CF", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Cádiz CF", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 73, mid: 72, def: 72 },
+      { name: "Real Zaragoza", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Real Oviedo", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Sporting de Gijón", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Deportivo de La Coruña", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Levante UD", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Elche CF", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "SD Eibar", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Racing de Santander", country: "Spain", league: "La Liga Hypermotion", stars: 3.0, att: 72, mid: 71, def: 70 },
+      { name: "Tenerife", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 71, mid: 71, def: 71 },
+      { name: "Albacete Balompié", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Burgos CF", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Málaga CF", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "FC Cartagena", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 69, mid: 70, def: 69 },
+      { name: "SD Huesca", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 69, mid: 69, def: 70 },
+      { name: "Racing de Ferrol", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "CD Mirandés", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "CD Castellón", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 69, mid: 68, def: 68 },
+      { name: "CD Eldense", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Córdoba CF", country: "Spain", league: "La Liga Hypermotion", stars: 2.5, att: 68, mid: 68, def: 67 },
+
+      // GERMANY - 2. BUNDESLIGA (18 Teams)
+      { name: "FC Schalke 04", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 74, mid: 73, def: 72 },
+      { name: "Hamburger SV", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 74, mid: 73, def: 73 },
+      { name: "1. FC Köln", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 73, mid: 74, def: 73 },
+      { name: "Hertha BSC", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Fortuna Düsseldorf", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Hannover 96", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "SC Paderborn 07", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Karlsruher SC", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "1. FC Kaiserslautern", country: "Germany", league: "2. Bundesliga", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "1. FC Nürnberg", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "SpVgg Greuther Fürth", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "SV Darmstadt 98", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "1. FC Magdeburg", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "SV Elversberg", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Eintracht Braunschweig", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Preußen Münster", country: "Germany", league: "2. Bundesliga", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "SSV Ulm 1846", country: "Germany", league: "2. Bundesliga", stars: 2.0, att: 68, mid: 67, def: 67 },
+      { name: "SSV Jahn Regensburg", country: "Germany", league: "2. Bundesliga", stars: 2.0, att: 67, mid: 67, def: 67 },
+
+      // GERMANY - 3. LIGA (20 Teams)
+      { name: "Arminia Bielefeld", country: "Germany", league: "3. Liga", stars: 2.0, att: 67, mid: 67, def: 66 },
+      { name: "Dynamo Dresden", country: "Germany", league: "3. Liga", stars: 2.0, att: 67, mid: 67, def: 66 },
+      { name: "Hansa Rostock", country: "Germany", league: "3. Liga", stars: 2.0, att: 67, mid: 66, def: 66 },
+      { name: "VfL Osnabrück", country: "Germany", league: "3. Liga", stars: 2.0, att: 66, mid: 66, def: 66 },
+      { name: "SV Wehen Wiesbaden", country: "Germany", league: "3. Liga", stars: 2.0, att: 66, mid: 66, def: 65 },
+      { name: "1860 München", country: "Germany", league: "3. Liga", stars: 2.0, att: 66, mid: 65, def: 65 },
+      { name: "1. FC Saarbrücken", country: "Germany", league: "3. Liga", stars: 2.0, att: 66, mid: 65, def: 65 },
+      { name: "Rot-Weiss Essen", country: "Germany", league: "3. Liga", stars: 2.0, att: 65, mid: 65, def: 65 },
+      { name: "FC Erzgebirge Aue", country: "Germany", league: "3. Liga", stars: 2.0, att: 65, mid: 65, def: 64 },
+      { name: "SV Sandhausen", country: "Germany", league: "3. Liga", stars: 2.0, att: 65, mid: 64, def: 64 },
+      { name: "FC Ingolstadt 04", country: "Germany", league: "3. Liga", stars: 2.0, att: 65, mid: 64, def: 64 },
+      { name: "SV Waldhof Mannheim", country: "Germany", league: "3. Liga", stars: 1.5, att: 64, mid: 64, def: 64 },
+      { name: "FC Viktoria Köln", country: "Germany", league: "3. Liga", stars: 1.5, att: 64, mid: 64, def: 63 },
+      { name: "SpVgg Unterhaching", country: "Germany", league: "3. Liga", stars: 1.5, att: 64, mid: 63, def: 63 },
+      { name: "SC Verl", country: "Germany", league: "3. Liga", stars: 1.5, att: 63, mid: 63, def: 63 },
+      { name: "Borussia Dortmund II", country: "Germany", league: "3. Liga", stars: 1.5, att: 63, mid: 63, def: 62 },
+      { name: "Alemannia Aachen", country: "Germany", league: "3. Liga", stars: 1.5, att: 63, mid: 62, def: 62 },
+      { name: "Energie Cottbus", country: "Germany", league: "3. Liga", stars: 1.5, att: 63, mid: 62, def: 62 },
+      { name: "Hannover 96 II", country: "Germany", league: "3. Liga", stars: 1.0, att: 61, mid: 61, def: 60 },
+      { name: "VfB Stuttgart II", country: "Germany", league: "3. Liga", stars: 1.0, att: 61, mid: 60, def: 60 },
+
+      // ITALY - SERIE BKT (20 Teams)
+      { name: "Sassuolo", country: "Italy", league: "Serie BKT", stars: 3.0, att: 74, mid: 73, def: 72 },
+      { name: "Sampdoria", country: "Italy", league: "Serie BKT", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Salernitana", country: "Italy", league: "Serie BKT", stars: 3.0, att: 73, mid: 72, def: 71 },
+      { name: "Frosinone", country: "Italy", league: "Serie BKT", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Palermo", country: "Italy", league: "Serie BKT", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Cremonese", country: "Italy", league: "Serie BKT", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Pisa", country: "Italy", league: "Serie BKT", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Spezia", country: "Italy", league: "Serie BKT", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "Bari", country: "Italy", league: "Serie BKT", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "Brescia", country: "Italy", league: "Serie BKT", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Modena", country: "Italy", league: "Serie BKT", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "Catanzaro", country: "Italy", league: "Serie BKT", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Reggiana", country: "Italy", league: "Serie BKT", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Cittadella", country: "Italy", league: "Serie BKT", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Cosenza", country: "Italy", league: "Serie BKT", stars: 2.5, att: 69, mid: 68, def: 68 },
+      { name: "Südtirol", country: "Italy", league: "Serie BKT", stars: 2.5, att: 68, mid: 68, def: 69 },
+      { name: "Cesena", country: "Italy", league: "Serie BKT", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "Juve Stabia", country: "Italy", league: "Serie BKT", stars: 2.5, att: 68, mid: 67, def: 67 },
+      { name: "Mantova", country: "Italy", league: "Serie BKT", stars: 2.0, att: 67, mid: 67, def: 66 },
+      { name: "Carrarese", country: "Italy", league: "Serie BKT", stars: 2.0, att: 66, mid: 66, def: 66 },
+
+      // FRANCE - LIGUE 2 BKT (18 Teams)
+      { name: "FC Metz", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 72, mid: 71, def: 71 },
+      { name: "FC Lorient", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 72, mid: 71, def: 71 },
+      { name: "Clermont Foot 63", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 71, mid: 71, def: 70 },
+      { name: "Paris FC", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "SM Caen", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 71, mid: 70, def: 70 },
+      { name: "En Avant Guingamp", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 70, mid: 70, def: 69 },
+      { name: "Amiens SC", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 70, mid: 69, def: 69 },
+      { name: "Grenoble Foot 38", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Rodez AF", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 69, mid: 69, def: 68 },
+      { name: "Pau FC", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 69, mid: 68, def: 68 },
+      { name: "Stade Lavallois", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "AC Ajaccio", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "SC Bastia", country: "France", league: "Ligue 2 BKT", stars: 2.5, att: 68, mid: 68, def: 68 },
+      { name: "USL Dunkerque", country: "France", league: "Ligue 2 BKT", stars: 2.0, att: 67, mid: 67, def: 67 },
+      { name: "FC Annecy", country: "France", league: "Ligue 2 BKT", stars: 2.0, att: 67, mid: 67, def: 67 },
+      { name: "Red Star FC", country: "France", league: "Ligue 2 BKT", stars: 2.0, att: 67, mid: 66, def: 66 },
+      { name: "FC Martigues", country: "France", league: "Ligue 2 BKT", stars: 2.0, att: 66, mid: 65, def: 65 },
+      { name: "Troyes", country: "France", league: "Ligue 2 BKT", stars: 2.0, att: 67, mid: 66, def: 66 },
+
+      // REPUBLIC OF IRELAND - SSE AIRTRICITY LEAGUES (20 Teams)
+      { name: "Shamrock Rovers", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.5, att: 64, mid: 63, def: 63 },
+      { name: "Derry City", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.5, att: 63, mid: 63, def: 62 },
+      { name: "Shelbourne", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.5, att: 63, mid: 62, def: 62 },
+      { name: "St. Patrick's Athletic", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.5, att: 62, mid: 62, def: 62 },
+      { name: "Bohemians", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.5, att: 62, mid: 61, def: 61 },
+      { name: "Waterford FC", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.0, att: 60, mid: 60, def: 59 },
+      { name: "Sligo Rovers", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.0, att: 60, mid: 59, def: 59 },
+      { name: "Galway United", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.0, att: 59, mid: 59, def: 59 },
+      { name: "Drogheda United", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.0, att: 58, mid: 58, def: 58 },
+      { name: "Dundalk", country: "Republic of Ireland", league: "SSE Airtricity Premier Division", stars: 1.0, att: 58, mid: 58, def: 57 },
+      { name: "Cork City", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 1.0, att: 58, mid: 57, def: 57 },
+      { name: "UCD Dublin", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 54, mid: 54, def: 53 },
+      { name: "Longford Town", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 53, mid: 53, def: 53 },
+      { name: "Cobh Ramblers", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 53, mid: 52, def: 52 },
+      { name: "Kerry FC", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 52, mid: 51, def: 51 },
+      { name: "Bray Wanderers", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 53, mid: 52, def: 52 },
+      { name: "Athlone Town", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 53, mid: 52, def: 52 },
+      { name: "Finn Harps", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 53, mid: 53, def: 52 },
+      { name: "Wexford FC", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 52, mid: 52, def: 52 },
+      { name: "Treaty United", country: "Republic of Ireland", league: "SSE Airtricity First Division", stars: 0.5, att: 52, mid: 52, def: 51 },
+
+      // INTERNATIONAL MEN'S SQUADS (50+ Teams)
+      { name: "France", country: "International", league: "Men's National Teams", stars: 5.0, att: 86, mid: 84, def: 83 },
+      { name: "Spain", country: "International", league: "Men's National Teams", stars: 5.0, att: 84, mid: 85, def: 83 },
+      { name: "Argentina", country: "International", league: "Men's National Teams", stars: 5.0, att: 85, mid: 84, def: 83 },
+      { name: "England", country: "International", league: "Men's National Teams", stars: 5.0, att: 85, mid: 85, def: 83 },
+      { name: "Germany", country: "International", league: "Men's National Teams", stars: 5.0, att: 84, mid: 84, def: 83 },
+      { name: "Portugal", country: "International", league: "Men's National Teams", stars: 5.0, att: 84, mid: 84, def: 83 },
+      { name: "Brazil", country: "International", league: "Men's National Teams", stars: 4.5, att: 84, mid: 82, def: 82 },
+      { name: "Netherlands", country: "International", league: "Men's National Teams", stars: 4.5, att: 82, mid: 82, def: 84 },
+      { name: "Italy", country: "International", league: "Men's National Teams", stars: 4.5, att: 80, mid: 82, def: 82 },
+      { name: "Croatia", country: "International", league: "Men's National Teams", stars: 4.5, att: 79, mid: 83, def: 81 },
+      { name: "Belgium", country: "International", league: "Men's National Teams", stars: 4.5, att: 81, mid: 81, def: 80 },
+      { name: "Uruguay", country: "International", league: "Men's National Teams", stars: 4.5, att: 81, mid: 82, def: 80 },
+      { name: "Morocco", country: "International", league: "Men's National Teams", stars: 4.5, att: 80, mid: 80, def: 81 },
+      { name: "Colombia", country: "International", league: "Men's National Teams", stars: 4.0, att: 80, mid: 79, def: 78 },
+      { name: "Denmark", country: "International", league: "Men's National Teams", stars: 4.0, att: 78, mid: 79, def: 79 },
+      { name: "Switzerland", country: "International", league: "Men's National Teams", stars: 4.0, att: 77, mid: 79, def: 79 },
+      { name: "Japan", country: "International", league: "Men's National Teams", stars: 4.0, att: 78, mid: 78, def: 77 },
+      { name: "Austria", country: "International", league: "Men's National Teams", stars: 4.0, att: 77, mid: 78, def: 77 },
+      { name: "Turkey", country: "International", league: "Men's National Teams", stars: 4.0, att: 78, mid: 77, def: 77 },
+      { name: "Norway", country: "International", league: "Men's National Teams", stars: 4.0, att: 82, mid: 78, def: 75 },
+      { name: "Senegal", country: "International", league: "Men's National Teams", stars: 4.0, att: 78, mid: 77, def: 77 },
+      { name: "United States", country: "International", league: "Men's National Teams", stars: 3.5, att: 77, mid: 76, def: 76 },
+      { name: "Mexico", country: "International", league: "Men's National Teams", stars: 3.5, att: 76, mid: 76, def: 76 },
+      { name: "Ukraine", country: "International", league: "Men's National Teams", stars: 3.5, att: 77, mid: 76, def: 76 },
+      { name: "Sweden", country: "International", league: "Men's National Teams", stars: 3.5, att: 79, mid: 75, def: 75 },
+      { name: "Poland", country: "International", league: "Men's National Teams", stars: 3.5, att: 79, mid: 75, def: 74 },
+      { name: "Scotland", country: "International", league: "Men's National Teams", stars: 3.5, att: 74, mid: 76, def: 76 },
+      { name: "Czech Republic", country: "International", league: "Men's National Teams", stars: 3.5, att: 76, mid: 75, def: 75 },
+      { name: "Serbia", country: "International", league: "Men's National Teams", stars: 3.5, att: 78, mid: 76, def: 74 },
+      { name: "South Korea", country: "International", league: "Men's National Teams", stars: 3.5, att: 78, mid: 75, def: 74 },
+      { name: "Ghana", country: "International", league: "Men's National Teams", stars: 3.5, att: 76, mid: 75, def: 74 },
+      { name: "Nigeria", country: "International", league: "Men's National Teams", stars: 3.5, att: 79, mid: 74, def: 73 },
+      { name: "Canada", country: "International", league: "Men's National Teams", stars: 3.5, att: 76, mid: 74, def: 74 },
+      { name: "Ivory Coast", country: "International", league: "Men's National Teams", stars: 3.5, att: 76, mid: 75, def: 75 },
+      { name: "Hungary", country: "International", league: "Men's National Teams", stars: 3.5, att: 74, mid: 76, def: 74 },
+      { name: "Romania", country: "International", league: "Men's National Teams", stars: 3.0, att: 73, mid: 73, def: 73 },
+      { name: "Slovakia", country: "International", league: "Men's National Teams", stars: 3.0, att: 73, mid: 74, def: 73 },
+      { name: "Slovenia", country: "International", league: "Men's National Teams", stars: 3.0, att: 74, mid: 72, def: 73 },
+      { name: "Greece", country: "International", league: "Men's National Teams", stars: 3.0, att: 73, mid: 73, def: 73 },
+      { name: "Wales", country: "International", league: "Men's National Teams", stars: 3.0, att: 73, mid: 73, def: 72 },
+      { name: "Australia", country: "International", league: "Men's National Teams", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Iceland", country: "International", league: "Men's National Teams", stars: 3.0, att: 72, mid: 72, def: 71 },
+      { name: "Republic of Ireland", country: "International", league: "Men's National Teams", stars: 3.0, att: 72, mid: 72, def: 72 },
+      { name: "Finland", country: "International", league: "Men's National Teams", stars: 3.0, att: 72, mid: 71, def: 71 },
+      { name: "Northern Ireland", country: "International", league: "Men's National Teams", stars: 2.5, att: 70, mid: 70, def: 70 },
+      { name: "New Zealand", country: "International", league: "Men's National Teams", stars: 2.5, att: 71, mid: 69, def: 69 },
+      { name: "Luxembourg", country: "International", league: "Men's National Teams", stars: 2.5, att: 69, mid: 69, def: 69 },
+      { name: "Cyprus", country: "International", league: "Men's National Teams", stars: 2.0, att: 66, mid: 66, def: 65 },
+      { name: "Faroe Islands", country: "International", league: "Men's National Teams", stars: 1.5, att: 63, mid: 63, def: 63 },
+      { name: "Malta", country: "International", league: "Men's National Teams", stars: 1.0, att: 61, mid: 60, def: 60 },
+      { name: "Moldova", country: "International", league: "Men's National Teams", stars: 1.0, att: 60, mid: 60, def: 59 },
+      { name: "Andorra", country: "International", league: "Men's National Teams", stars: 0.5, att: 54, mid: 54, def: 53 },
+      { name: "Gibraltar", country: "International", league: "Men's National Teams", stars: 0.5, att: 53, mid: 53, def: 52 },
+      { name: "Liechtenstein", country: "International", league: "Men's National Teams", stars: 0.5, att: 52, mid: 52, def: 52 },
+      { name: "San Marino", country: "International", league: "Men's National Teams", stars: 0.5, att: 50, mid: 50, def: 49 }
+    ];
+
+    // REST OF WORLD, SOUTH AMERICAN, SCANDINAVIAN, CENTRAL EUROPEAN & ASIAN LEAGUES (Over 280 Clubs)
+    const GLOBAL_ADDITIONS = [
+      { country: "Argentina", league: "Liga Profesional de Fútbol", teams: ["River Plate", "Boca Juniors", "Racing Club", "Independiente", "San Lorenzo", "Estudiantes de La Plata", "Vélez Sarsfield", "Talleres de Córdoba", "Lanús", "Newell's Old Boys", "Rosario Central", "Argentinos Juniors", "Defensa y Justicia", "Godoy Cruz", "Belgrano", "Huracán", "Banfield", "Gimnasia La Plata", "Platense", "Tigre", "Atlético Tucumán", "Unión de Santa Fe", "Central Córdoba", "Barracas Central", "Sarmiento", "Deportivo Riestra", "Independiente Rivadavia", "Instituto"], baseStars: 3.0 },
+      { country: "Poland", league: "PKO BP Ekstraklasa", teams: ["Lech Poznań", "Legia Warszawa", "Jagiellonia Białystok", "Raków Częstochowa", "Pogoń Szczecin", "Śląsk Wrocław", "Górnik Zabrze", "Cracovia", "Piast Gliwice", "Widzew Łódź", "Zagłębie Lubin", "Radomiak Radom", "GKS Katowice", "Motor Lublin", "Korona Kielce", "Stal Mielec", "Puszcza Niepołomice", "Lechia Gdańsk"], baseStars: 2.5 },
+      { country: "Romania", league: "Superliga", teams: ["FCSB", "CFR Cluj", "Universitatea Craiova", "Rapid București", "Farul Constanța", "Sepsi OSK", "Dinamo București", "Oțelul Galați", "Universitatea Cluj", "FC Hermannstadt", "Petrolul Ploiești", "Politehnica Iași", "FC Botoșani", "UTA Arad", "Unirea Slobozia", "FC Buzău"], baseStars: 2.5 },
+      { country: "Sweden", league: "Allsvenskan", teams: ["Malmö FF", "Djurgårdens IF", "Hammarby IF", "AIK", "IF Elfsborg", "BK Häcken", "IFK Göteborg", "Mjällby AIF", "IK Sirius", "IFK Norrköping", "GAIS", "Halmstads BK", "IFK Värnamo", "BP", "Kalmar FF", "Västerås SK"], baseStars: 2.5 },
+      { country: "Norway", league: "Eliteserien", teams: ["FK Bodø/Glimt", "Molde FK", "SK Brann", "Rosenborg BK", "Viking FK", "Fredrikstad FK", "Tromsø IL", "Strømsgodset", "Sarpsborg 08", "KFUM Oslo", "HamKam", "Kristiansund BK", "Sandefjord", "Haugesund", "Lillestrøm SK", "Odds BK"], baseStars: 2.5 },
+      { country: "Switzerland", league: "Credit Suisse Super League", teams: ["BSC Young Boys", "FC Basel", "FC Zürich", "FC Lugano", "Servette FC", "FC St. Gallen", "FC Luzern", "Winterthur", "Yverdon Sport", "Lausanne-Sport", "Grasshopper Club Zürich", "FC Sion"], baseStars: 3.0 },
+      { country: "Austria", league: "Admiral Bundesliga", teams: ["Red Bull Salzburg", "SK Sturm Graz", "LASK", "SK Rapid Wien", "FK Austria Wien", "Wolfsberger AC", "TSV Hartberg", "SK Austria Klagenfurt", "SCR Altach", "WSG Tirol", "Blau-Weiß Linz", "Grazer AK"], baseStars: 3.0 },
+      { country: "Denmark", league: "3F Superliga", teams: ["FC København", "FC Midtjylland", "Brøndby IF", "FC Nordsjælland", "AGF", "Silkeborg IF", "Randers FC", "Viborg FF", "Lyngby BK", "Vejle Boldklub", "Sønderjyske", "AaB"], baseStars: 3.0 },
+      { country: "Australia", league: "Isuzu UTE A-League", teams: ["Sydney FC", "Melbourne City", "Melbourne Victory", "Central Coast Mariners", "Western Sydney Wanderers", "Macarthur FC", "Wellington Phoenix", "Adelaide United", "Brisbane Roar", "Perth Glory", "Newcastle Jets", "Western United", "Auckland FC"], baseStars: 2.5 },
+      { country: "India", league: "Indian Super League", teams: ["Mohun Bagan SG", "Mumbai City FC", "FC Goa", "Kerala Blasters", "Bengaluru FC", "Odisha FC", "East Bengal", "Chennaiyin FC", "NorthEast United", "Jamshedpur FC", "Punjab FC", "Hyderabad FC", "Mohammedan SC"], baseStars: 1.5 },
+      { country: "South Korea", league: "K League 1", teams: ["Ulsan HD", "Jeonbuk Hyundai Motors", "FC Seoul", "Pohang Steelers", "Gwangju FC", "Gangwon FC", "Suwon FC", "Jeju United", "Gimcheon Sangmu", "Incheon United", "Daejeon Hana Citizen", "Daegu FC"], baseStars: 2.5 },
+      { country: "China", league: "Chinese Super League", teams: ["Shanghai Port", "Shanghai Shenhua", "Shandong Taishan", "Beijing Guoan", "Chengdu Rongcheng", "Zhejiang FC", "Tianjin Jinmen Tiger", "Wuhan Three Towns", "Henan FC", "Changchun Yatai", "Cangzhou Mighty Lions", "Qingdao West Coast", "Qingdao Hainiu", "Shenzhen Peng City", "Meizhou Hakka", "Nantong Zhiyun"], baseStars: 2.5 },
+      { country: "Rest of World", league: "Rest of World", teams: ["Shakhtar Donetsk", "Dynamo Kyiv", "Olympiacos", "Panathinaikos", "AEK Athens", "PAOK FC", "Slavia Praha", "Sparta Praha", "Viktoria Plzeň", "Ferencváros", "Qarabağ FK", "APOEL FC", "HJK Helsinki"], baseStars: 3.5 }
+    ];
+
+    GLOBAL_ADDITIONS.forEach(group => {
+      group.teams.forEach(tName => {
+        TEAMS_DATABASE.push({
+          name: tName,
+          country: group.country,
+          league: group.league,
+          stars: group.baseStars,
+          att: Math.floor(group.baseStars * 15 + 18),
+          mid: Math.floor(group.baseStars * 15 + 17),
+          def: Math.floor(group.baseStars * 15 + 16)
+        });
+      });
+    });
+
+    /* ============================================================
+       4. APPLICATION STATE
+       ============================================================ */
+    const state = {
+      p1: 'amine',
+      p2: 'mohammed',
+      mode: 'range', // 'range' or 'exact'
+      minStars: 3.5,
+      maxStars: 5.0,
+      exactStar: 4.5,
+      selectedCountry: 'ALL',
+      selectedLeague: 'ALL',
+      balancedMatch: true,
+      classicRivalries: false,
+      soundEnabled: true,
+      currentDraw: {
+        p1Team: null,
+        p2Team: null,
+        derbyName: null
+      }
+    };
+
+    /* ============================================================
+       5. WEB AUDIO SFX & HAPTICS
+       ============================================================ */
+    let synth = null;
+    function playTone(freq, duration = "16n") {
+      if (!state.soundEnabled) return;
+      try {
+        if (!synth) {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -12;
+        }
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        synth.triggerAttackRelease(freq, duration);
+      } catch(e) {}
+    }
+
+    function haptic() {
+      if ('vibrate' in navigator) {
+        try { navigator.vibrate(15); } catch(e) {}
+      }
+    }
+
+    /* ============================================================
+       6. STEALTH WEIGHTED PICKING ALGORITHM
+       Mohammed Real Madrid nerfed 15x, Ayoub France & PSG nerfed 15x
+       Strictly silent, zero UI hints.
+       ============================================================ */
+    function pickSquadForPlayer(playerKey, candidateList) {
+      if (!candidateList || candidateList.length === 0) return null;
+
+      const weights = candidateList.map(team => {
+        let weight = 100;
+        if (playerKey === 'mohammed' && team.name === 'Real Madrid') {
+          weight = 6;
+        } else if (playerKey === 'ayoub' && (team.name === 'Paris Saint-Germain' || team.name === 'France')) {
+          weight = 6;
+        }
+        return weight;
+      });
+
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      let randomVal = Math.random() * totalWeight;
+
+      for (let i = 0; i < candidateList.length; i++) {
+        if (randomVal < weights[i]) {
+          return candidateList[i];
+        }
+        randomVal -= weights[i];
+      }
+      return candidateList[Math.floor(Math.random() * candidateList.length)];
+    }
+
+    /* ============================================================
+       7. DOM ELEMENT BINDINGS
+       ============================================================ */
+    const p1Select = document.getElementById('p1-select');
+    const p2Select = document.getElementById('p2-select');
+    const p1Badge = document.getElementById('p1-badge');
+    const p2Badge = document.getElementById('p2-badge');
+    const p1Desc = document.getElementById('p1-desc');
+    const p2Desc = document.getElementById('p2-desc');
+    const swapBtn = document.getElementById('swap-players-btn');
+    const poolCountEl = document.getElementById('pool-count');
+
+    const countrySelect = document.getElementById('country-select');
+    const leagueSelect = document.getElementById('league-select');
+    const resetGeoBtn = document.getElementById('reset-geo-filter-btn');
+
+    const parityBtn = document.getElementById('parity-toggle-btn');
+    const parityTitle = document.getElementById('parity-title');
+    const parityDesc = document.getElementById('parity-desc');
+    const parityDot = document.getElementById('parity-status-dot');
+
+    const rivalryBtn = document.getElementById('rivalry-toggle-btn');
+    const rivalryTitle = document.getElementById('rivalry-title');
+    const rivalryDesc = document.getElementById('rivalry-desc');
+    const rivalryDot = document.getElementById('rivalry-status-dot');
+    const derbyBanner = document.getElementById('derby-banner');
+    const derbyTitleText = document.getElementById('derby-title-text');
+
+    const starMinSlider = document.getElementById('star-min');
+    const starMaxSlider = document.getElementById('star-max');
+    const starMinVal = document.getElementById('star-min-val');
+    const starMaxVal = document.getElementById('star-max-val');
+    const rangeDisplay = document.getElementById('range-display');
+    const rangeControls = document.getElementById('range-controls');
+    const exactControls = document.getElementById('exact-controls');
+    const modeRangeBtn = document.getElementById('mode-range-btn');
+    const modeExactBtn = document.getElementById('mode-exact-btn');
+    const exactChipsGrid = document.getElementById('exact-chips-grid');
+
+    const rollBtn = document.getElementById('roll-button');
+    const rollBtnText = document.getElementById('roll-button-text');
+    const p1RerollBtn = document.getElementById('p1-reroll-btn');
+    const p2RerollBtn = document.getElementById('p2-reroll-btn');
+
+    /* ============================================================
+       8. CASCADING COUNTRY & LEAGUE FILTERS SETUP
+       ============================================================ */
+    function populateCountryAndLeagueSelectors() {
+      // Collect unique sorted countries
+      const countries = Array.from(new Set(TEAMS_DATABASE.map(t => t.country))).sort();
+      countrySelect.innerHTML = `<option value="ALL">🌍 All Countries (${countries.length})</option>` +
+        countries.map(c => `<option value="${c}">${c}</option>`).join('');
+
+      updateLeagueDropdown();
+    }
+
+    function updateLeagueDropdown() {
+      const selectedCountry = countrySelect.value;
+      let relevantTeams = TEAMS_DATABASE;
+      if (selectedCountry !== 'ALL') {
+        relevantTeams = relevantTeams.filter(t => t.country === selectedCountry);
+      }
+
+      const leagues = Array.from(new Set(relevantTeams.map(t => t.league))).sort();
+      leagueSelect.innerHTML = `<option value="ALL">🏆 All Leagues (${leagues.length})</option>` +
+        leagues.map(l => `<option value="${l}">${l}</option>`).join('');
+
+      state.selectedCountry = selectedCountry;
+      state.selectedLeague = 'ALL';
+      updatePoolCount();
+    }
+
+    /* ============================================================
+       9. POOL COMPUTATION
+       ============================================================ */
+    function getFilteredPool() {
+      return TEAMS_DATABASE.filter(team => {
+        // Country filter
+        if (state.selectedCountry !== 'ALL' && team.country !== state.selectedCountry) return false;
+        // League filter
+        if (state.selectedLeague !== 'ALL' && team.league !== state.selectedLeague) return false;
+
+        // Star rating filter
+        if (state.mode === 'range') {
+          return team.stars >= state.minStars && team.stars <= state.maxStars;
+        } else {
+          return team.stars === state.exactStar;
+        }
+      });
+    }
+
+    function updatePoolCount() {
+      const pool = getFilteredPool();
+      poolCountEl.textContent = pool.length;
+    }
+
+    /* ============================================================
+       10. CARD RENDERING
+       ============================================================ */
+    function renderCard(prefix, team, playerKey) {
+      const player = PLAYERS[playerKey];
+      document.getElementById(`${prefix}-card-name`).textContent = `${player.name} ${player.emoji}`;
+
+      if (!team) {
+        document.getElementById(`${prefix}-team-name`).textContent = "None Available";
+        document.getElementById(`${prefix}-league-tag`).textContent = "ADJUST FILTERS";
+        document.getElementById(`${prefix}-stars`).innerHTML = "☆☆☆☆☆";
+        document.getElementById(`${prefix}-star-num`).textContent = "0.0★";
+        document.getElementById(`${prefix}-att`).textContent = "--";
+        document.getElementById(`${prefix}-mid`).textContent = "--";
+        document.getElementById(`${prefix}-def`).textContent = "--";
+        return;
+      }
+
+      document.getElementById(`${prefix}-team-name`).textContent = team.name;
+      // High-contrast clean format: [COUNTRY] • [LEAGUE] (No cities)
+      document.getElementById(`${prefix}-league-tag`).textContent = `${team.country.toUpperCase()} • ${team.league.toUpperCase()}`;
+
+      const fullStars = Math.floor(team.stars);
+      const hasHalf = (team.stars % 1) !== 0;
+      let starsHtml = '★'.repeat(fullStars);
+      if (hasHalf) starsHtml += '½';
+      starsHtml += '☆'.repeat(Math.max(0, 5 - fullStars - (hasHalf ? 1 : 0)));
+
+      document.getElementById(`${prefix}-stars`).innerHTML = starsHtml;
+      document.getElementById(`${prefix}-star-num`).textContent = `${team.stars.toFixed(1)}★`;
+      document.getElementById(`${prefix}-att`).textContent = team.att;
+      document.getElementById(`${prefix}-mid`).textContent = team.mid;
+      document.getElementById(`${prefix}-def`).textContent = team.def;
+    }
+
+    /* ============================================================
+       11. ROLL MATCHUP ENGINE (WITH CLASSIC RIVALRIES SUPPORT)
+       ============================================================ */
+    function rollMatchup() {
+      haptic();
+      playTone("C5", "8n");
+      setTimeout(() => playTone("G5", "8n"), 100);
+
+      const pool = getFilteredPool();
+      if (pool.length === 0) {
+        alert("No teams match the current filter. Try broadening your star range or country.");
+        return;
+      }
+
+      let team1 = null;
+      let team2 = null;
+      let foundDerby = null;
+
+      // Check if Classic Rivalries mode is enabled
+      if (state.classicRivalries) {
+        const poolNames = new Set(pool.map(t => t.name));
+        
+        // Find derbies where BOTH teams are present in the active pool
+        const matchingDerbies = CLASSIC_RIVALRIES.filter(d => 
+          poolNames.has(d.teams[0]) && poolNames.has(d.teams[1])
+        );
+
+        if (matchingDerbies.length > 0) {
+          foundDerby = matchingDerbies[Math.floor(Math.random() * matchingDerbies.length)];
+          const t1Obj = pool.find(t => t.name === foundDerby.teams[0]);
+          const t2Obj = pool.find(t => t.name === foundDerby.teams[1]);
+
+          // Coin flip for home/away orientation
+          if (Math.random() > 0.5) {
+            team1 = t1Obj;
+            team2 = t2Obj;
+          } else {
+            team1 = t2Obj;
+            team2 = t1Obj;
+          }
+        }
+      }
+
+      // If not rivalry mode or no matching derby found within the strict filters
+      if (!team1 || !team2) {
+        foundDerby = null;
+        team1 = pickSquadForPlayer(state.p1, pool);
+        let team2Candidates = pool.filter(t => t.name !== team1.name);
+
+        if (state.balancedMatch && team2Candidates.length > 0) {
+          const balancedPool = team2Candidates.filter(t => Math.abs(t.stars - team1.stars) <= 0.5);
+          if (balancedPool.length > 0) {
+            team2Candidates = balancedPool;
+          }
+        }
+
+        team2 = pickSquadForPlayer(state.p2, team2Candidates.length > 0 ? team2Candidates : pool);
+      }
+
+      state.currentDraw.p1Team = team1;
+      state.currentDraw.p2Team = team2;
+      state.currentDraw.derbyName = foundDerby ? foundDerby.name : null;
+
+      // Animate roll
+      const p1Card = document.getElementById('p1-card');
+      const p2Card = document.getElementById('p2-card');
+      p1Card.classList.add('scale-95', 'opacity-80');
+      p2Card.classList.add('scale-95', 'opacity-80');
+
+      setTimeout(() => {
+        renderCard('p1', team1, state.p1);
+        renderCard('p2', team2, state.p2);
+
+        if (foundDerby) {
+          derbyTitleText.textContent = `⚡ DERBY: ${foundDerby.name}`;
+          derbyBanner.classList.remove('hidden');
+        } else {
+          derbyBanner.classList.add('hidden');
+        }
+
+        p1Card.classList.remove('scale-95', 'opacity-80');
+        p2Card.classList.remove('scale-95', 'opacity-80');
+      }, 150);
+    }
+
+    // Single card reroll
+    function rerollPlayer(prefix) {
+      haptic();
+      playTone("E5", "16n");
+      const pool = getFilteredPool();
+      if (pool.length === 0) return;
+
+      const playerKey = prefix === 'p1' ? state.p1 : state.p2;
+      const otherTeam = prefix === 'p1' ? state.currentDraw.p2Team : state.currentDraw.p1Team;
+
+      let candidates = pool.filter(t => !otherTeam || t.name !== otherTeam.name);
+      if (state.balancedMatch && otherTeam) {
+        const balanced = candidates.filter(t => Math.abs(t.stars - otherTeam.stars) <= 0.5);
+        if (balanced.length > 0) candidates = balanced;
+      }
+
+      const newTeam = pickSquadForPlayer(playerKey, candidates.length > 0 ? candidates : pool);
+      if (prefix === 'p1') {
+        state.currentDraw.p1Team = newTeam;
+      } else {
+        state.currentDraw.p2Team = newTeam;
+      }
+
+      // Hide derby badge if a side is manually altered
+      state.currentDraw.derbyName = null;
+      derbyBanner.classList.add('hidden');
+
+      renderCard(prefix, newTeam, playerKey);
+    }
+
+    /* ============================================================
+       12. EXACT STAR CHIPS SETUP
+       ============================================================ */
+    const allStarSteps = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+    allStarSteps.forEach(star => {
+      const chip = document.createElement('button');
+      chip.className = `exact-chip py-1.5 rounded-lg text-xs font-mono font-bold border transition ${
+        star === state.exactStar ? 'bg-fc-neon text-black border-fc-neon shadow-neon-glow' : 'bg-fc-pitch border-fc-border text-gray-300'
+      }`;
+      chip.textContent = `${star.toFixed(1)}★`;
+      chip.addEventListener('click', () => {
+        haptic();
+        state.exactStar = star;
+        document.querySelectorAll('.exact-chip').forEach(c => {
+          c.className = 'exact-chip py-1.5 rounded-lg text-xs font-mono font-bold border transition bg-fc-pitch border-fc-border text-gray-300';
+        });
+        chip.className = 'exact-chip py-1.5 rounded-lg text-xs font-mono font-bold border transition bg-fc-neon text-black border-fc-neon shadow-neon-glow';
+        updatePoolCount();
+      });
+      exactChipsGrid.appendChild(chip);
+    });
+
+    /* ============================================================
+       13. EVENT LISTENERS
+       ============================================================ */
+    // Opponent selectors
+    p1Select.addEventListener('change', (e) => {
+      haptic();
+      state.p1 = e.target.value;
+      const p = PLAYERS[state.p1];
+      p1Badge.textContent = p.emoji;
+      p1Desc.textContent = p.desc;
+      if (state.currentDraw.p1Team) {
+        renderCard('p1', state.currentDraw.p1Team, state.p1);
+      }
+    });
+
+    p2Select.addEventListener('change', (e) => {
+      haptic();
+      state.p2 = e.target.value;
+      const p = PLAYERS[state.p2];
+      p2Badge.textContent = p.emoji;
+      p2Desc.textContent = p.desc;
+      if (state.currentDraw.p2Team) {
+        renderCard('p2', state.currentDraw.p2Team, state.p2);
+      }
+    });
+
+    swapBtn.addEventListener('click', () => {
+      haptic();
+      playTone("A4", "16n");
+      const tempP = state.p1;
+      state.p1 = state.p2;
+      state.p2 = tempP;
+
+      p1Select.value = state.p1;
+      p2Select.value = state.p2;
+
+      p1Badge.textContent = PLAYERS[state.p1].emoji;
+      p1Desc.textContent = PLAYERS[state.p1].desc;
+      p2Badge.textContent = PLAYERS[state.p2].emoji;
+      p2Desc.textContent = PLAYERS[state.p2].desc;
+
+      const tempTeam = state.currentDraw.p1Team;
+      state.currentDraw.p1Team = state.currentDraw.p2Team;
+      state.currentDraw.p2Team = tempTeam;
+
+      renderCard('p1', state.currentDraw.p1Team, state.p1);
+      renderCard('p2', state.currentDraw.p2Team, state.p2);
+    });
+
+    // Country & League Selectors
+    countrySelect.addEventListener('change', () => {
+      haptic();
+      updateLeagueDropdown();
+    });
+
+    leagueSelect.addEventListener('change', (e) => {
+      haptic();
+      state.selectedLeague = e.target.value;
+      updatePoolCount();
+    });
+
+    resetGeoBtn.addEventListener('click', () => {
+      haptic();
+      countrySelect.value = 'ALL';
+      updateLeagueDropdown();
+    });
+
+    // Classic Rivalries Toggle
+    rivalryBtn.addEventListener('click', () => {
+      haptic();
+      state.classicRivalries = !state.classicRivalries;
+      if (state.classicRivalries) {
+        rivalryBtn.className = "p-2.5 rounded-xl border border-fc-gold/60 bg-fc-gold/15 text-left transition active:scale-95 flex flex-col justify-between derby-glow";
+        rivalryTitle.className = "text-xs font-bold text-fc-gold flex items-center gap-1.5";
+        rivalryDot.className = "w-2 h-2 rounded-full bg-fc-gold shadow-[0_0_8px_#ffd000]";
+        rivalryDesc.textContent = "Derbies Priority Active";
+        rollBtnText.textContent = "ROLL CLASSIC DERBY";
+      } else {
+        rivalryBtn.className = "p-2.5 rounded-xl border border-fc-border bg-fc-surface text-left transition active:scale-95 flex flex-col justify-between";
+        rivalryTitle.className = "text-xs font-bold text-gray-300 flex items-center gap-1.5";
+        rivalryDot.className = "w-2 h-2 rounded-full bg-gray-600";
+        rivalryDesc.textContent = "Classic Rivalries: Off";
+        rollBtnText.textContent = "ROLL 1V1 MATCHUP";
+        derbyBanner.classList.add('hidden');
+      }
+    });
+
+    // Parity Toggle
+    parityBtn.addEventListener('click', () => {
+      haptic();
+      state.balancedMatch = !state.balancedMatch;
+      if (state.balancedMatch) {
+        parityBtn.className = "p-2.5 rounded-xl border border-fc-neon/50 bg-fc-neon/15 text-left transition active:scale-95 flex flex-col justify-between";
+        parityTitle.className = "text-xs font-bold text-fc-neon flex items-center gap-1.5";
+        parityDot.className = "w-2 h-2 rounded-full bg-fc-neon";
+        parityDesc.textContent = "±0.5★ & close stats";
+      } else {
+        parityBtn.className = "p-2.5 rounded-xl border border-fc-border bg-fc-surface text-left transition active:scale-95 flex flex-col justify-between";
+        parityTitle.className = "text-xs font-bold text-gray-400 flex items-center gap-1.5";
+        parityDot.className = "w-2 h-2 rounded-full bg-gray-600";
+        parityDesc.textContent = "Unrestricted Star Gap";
+      }
+    });
+
+    // Mode Toggle
+    modeRangeBtn.addEventListener('click', () => {
+      haptic();
+      state.mode = 'range';
+      modeRangeBtn.className = "px-2.5 py-0.5 rounded bg-fc-elevated text-white";
+      modeExactBtn.className = "px-2.5 py-0.5 rounded text-gray-400 hover:text-white";
+      rangeControls.classList.remove('hidden');
+      exactControls.classList.add('hidden');
+      updatePoolCount();
+    });
+
+    modeExactBtn.addEventListener('click', () => {
+      haptic();
+      state.mode = 'exact';
+      modeExactBtn.className = "px-2.5 py-0.5 rounded bg-fc-elevated text-white";
+      modeRangeBtn.className = "px-2.5 py-0.5 rounded text-gray-400 hover:text-white";
+      exactControls.classList.remove('hidden');
+      rangeControls.classList.add('hidden');
+      updatePoolCount();
+    });
+
+    // Sliders
+    starMinSlider.addEventListener('input', (e) => {
+      let val = parseFloat(e.target.value);
+      if (val > state.maxStars) {
+        val = state.maxStars;
+        starMinSlider.value = val;
+      }
+      state.minStars = val;
+      starMinVal.textContent = `${val.toFixed(1)}★`;
+      rangeDisplay.textContent = `${state.minStars.toFixed(1)}★ — ${state.maxStars.toFixed(1)}★`;
+      updatePoolCount();
+    });
+
+    starMaxSlider.addEventListener('input', (e) => {
+      let val = parseFloat(e.target.value);
+      if (val < state.minStars) {
+        val = state.minStars;
+        starMaxSlider.value = val;
+      }
+      state.maxStars = val;
+      starMaxVal.textContent = `${val.toFixed(1)}★`;
+      rangeDisplay.textContent = `${state.minStars.toFixed(1)}★ — ${state.maxStars.toFixed(1)}★`;
+      updatePoolCount();
+    });
+
+    // Presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        haptic();
+        state.mode = 'range';
+        modeRangeBtn.click();
+        const min = parseFloat(btn.dataset.min);
+        const max = parseFloat(btn.dataset.max);
+        state.minStars = min;
+        state.maxStars = max;
+        starMinSlider.value = min;
+        starMaxSlider.value = max;
+        starMinVal.textContent = `${min.toFixed(1)}★`;
+        starMaxVal.textContent = `${max.toFixed(1)}★`;
+        rangeDisplay.textContent = `${min.toFixed(1)}★ — ${max.toFixed(1)}★`;
+        updatePoolCount();
+      });
+    });
+
+    // Audio Toggle
+    document.getElementById('audio-toggle').addEventListener('click', () => {
+      state.soundEnabled = !state.soundEnabled;
+      const icon = document.getElementById('audio-toggle').querySelector('i');
+      if (state.soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        icon.className = "w-4 h-4 text-fc-neon";
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        icon.className = "w-4 h-4 text-gray-500";
+      }
+      lucide.createIcons();
+    });
+
+    rollBtn.addEventListener('click', rollMatchup);
+    p1RerollBtn.addEventListener('click', () => rerollPlayer('p1'));
+    p2RerollBtn.addEventListener('click', () => rerollPlayer('p2'));
+
+    // Window load initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      populateCountryAndLeagueSelectors();
+      lucide.createIcons();
+      updatePoolCount();
+      rollMatchup();
+    });
+  </script>
+</body>
+</html>
